@@ -45,7 +45,7 @@ namespace VampireSummonRedux.Common.Config
         [Range(0, 99)]
         public int UpgradeCostPerRank;
 
-        [Header("Damage Caps")]
+        [Header("DamageCaps")]
         [DefaultValue(60)]
         [Range(0, 9999)]
         public int PreHardmodeBonusDamageCap;

@@ -1,0 +1,105 @@
+Configs: {
+	VampireSummonReduxConfig: {
+		DefaultTargetingMode: {
+			Tooltip: ""
+			Label: Default Targeting Mode
+		}
+
+		Headers: {
+			Targeting: Targeting Header
+			DamageCaps: Damage Caps Header
+			Upgrades: Upgrades Header
+			Leveling: Leveling Header
+			XP: X P Header
+		}
+
+		PostMoonLordBonusDamageCap: {
+			Tooltip: ""
+			Label: Post Moon Lord Bonus Damage Cap
+		}
+
+		PreHardmodeBonusDamageCap: {
+			Tooltip: ""
+			Label: Pre Hardmode Bonus Damage Cap
+		}
+
+		UpgradeCostPerRank: {
+			Tooltip: ""
+			Label: Upgrade Cost Per Rank
+		}
+
+		BaseUpgradeCost: {
+			Tooltip: ""
+			Label: Base Upgrade Cost
+		}
+
+		PointsPerLevel: {
+			Tooltip: ""
+			Label: Points Per Level
+		}
+
+		XpToLevelPerLevel: {
+			Tooltip: ""
+			Label: Xp To Level Per Level
+		}
+
+		BaseXpToLevel: {
+			Tooltip: ""
+			Label: Base Xp To Level
+		}
+
+		XpPerKill: {
+			Tooltip: ""
+			Label: Xp Per Kill
+		}
+
+		XpPerHit: {
+			Tooltip: ""
+			Label: Xp Per Hit
+		}
+
+		GainXPOnKill: {
+			Tooltip: ""
+			Label: Gain X P On Kill
+		}
+
+		GainXPOnHit: {
+			Tooltip: ""
+			Label: Gain X P On Hit
+		}
+
+		DisplayName: Vampire Summon Redux Config
+	}
+
+	TargetingMode: {
+		ClosestToMinion: {
+			Tooltip: ""
+			Label: Closest To Minion
+		}
+
+		ClosestToPlayer: {
+			Tooltip: ""
+			Label: Closest To Player
+		}
+
+		Tooltip: ""
+	}
+}
+
+Projectiles.VampireKnifeMinion.DisplayName: Vampire Knife Minion
+
+Items: {
+	VampireKnives: {
+		Tooltip: ""
+		DisplayName: Vampire Knives
+	}
+}
+
+Buffs: {
+	VampireKnifeBuff: {
+		Description: Mods.VampireSummonRedux.Buffs.VampireKnifeBuff.Description
+		DisplayName: Vampire Knife Buff
+	}
+}
+
+"Keybinds.Open Upgrade Menu.DisplayName": Open  Upgrade  Menu
