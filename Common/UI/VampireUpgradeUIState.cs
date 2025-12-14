@@ -4,7 +4,6 @@ using Terraria;
 using Terraria.ID;
 using Terraria.UI;
 using Terraria.GameContent.UI.Elements;
-using Terraria.ModLoader;
 
 using VampireSummonRedux.Common.Net;
 using VampireSummonRedux.Common.Players;
@@ -21,39 +20,35 @@ namespace VampireSummonRedux.Common.UI
         private UIText xpLine;
         private UIText descText;
 
-        private UITextButton dmgBtn, spdBtn, lscBtn, lsaBtn, focusBtn, ifrBtn, targetBtn, refundBtn, closeBtn;
+        private UITextButton dmgBtn;
+        private UITextButton spdBtn;
+        private UITextButton lscBtn;
+        private UITextButton lsaBtn;
+        private UITextButton ifrBtn;
+        private UITextButton targetBtn;
+
+        private UITextButton refundBtn;
+        private UITextButton closeBtn;
 
         private const float BtnTextScale = 0.60f;
-
-        // --- Display constants (match current upgrade logic) ---
-        private const int DamagePerRank = 2;
-        private const int LifestealChancePerRankPercent = 2;  // your minion uses rank*2%
-        private const int LifestealBaseHeal = 1;              // your minion uses 1 + rank
-        private const int LifestealHealPerRank = 1;
-
-        // Immunity frames = local NPC hit cooldown tuning (lower is stronger)
-        private const int ImmunityBaseCooldown = 18;
-        private const int ImmunityCooldownDownPerRank = 2;
-        private const int ImmunityMinCooldown = 6;
 
         public override void OnInitialize()
         {
             panel = new UIDraggablePanel();
             panel.SetPadding(12);
 
-            float w = 520f;
-            float h = 460f;
+            float w = 560f;
+            float h = 485f;
 
             panel.Width.Set(w, 0f);
             panel.Height.Set(h, 0f);
 
-            // Center it
             panel.Left.Set(-w / 2f, 0.5f);
             panel.Top.Set(-h / 2f, 0.5f);
 
             Append(panel);
 
-            titleText = new UIText("Vampire Knives Upgrades", 0.7f);
+            titleText = new UIText("Vampire Knives Upgrades", 0.70f);
             titleText.Left.Set(10, 0f);
             titleText.Top.Set(8, 0f);
             panel.Append(titleText);
@@ -81,14 +76,9 @@ namespace VampireSummonRedux.Common.UI
             spdBtn = MakeBtn(y, rowH); y += rowH + gap;
             lscBtn = MakeBtn(y, rowH); y += rowH + gap;
             lsaBtn = MakeBtn(y, rowH); y += rowH + gap;
-            focusBtn = MakeBtn(y, rowH); y += rowH + gap;
-
-            // NEW: Immunity frames upgrade button row
             ifrBtn = MakeBtn(y, rowH); y += rowH + gap;
-
             targetBtn = MakeBtn(y, rowH); y += rowH + gap;
 
-            // Bottom row
             refundBtn = new UITextButton("Refund Upgrades", BtnTextScale);
             refundBtn.Width.Set(190, 0f);
             refundBtn.Height.Set(34, 0f);
@@ -105,28 +95,23 @@ namespace VampireSummonRedux.Common.UI
             closeBtn.OnLeftClick += (_, __) => VampireUpgradeUISystem.Toggle();
             panel.Append(closeBtn);
 
-            // Click behavior
+            // Click actions
             dmgBtn.OnLeftClick += (_, __) => TryBuy(UpgradeType.Damage);
             spdBtn.OnLeftClick += (_, __) => TryBuy(UpgradeType.Speed);
             lscBtn.OnLeftClick += (_, __) => TryBuy(UpgradeType.LifestealChance);
             lsaBtn.OnLeftClick += (_, __) => TryBuy(UpgradeType.LifestealAmount);
-            focusBtn.OnLeftClick += (_, __) => TryBuy(UpgradeType.FocusSameTarget);
-
-            // NEW: Immunity frames
             ifrBtn.OnLeftClick += (_, __) => TryBuy(UpgradeType.ImmunityFrames);
 
             targetBtn.OnLeftClick += (_, __) => ToggleTargetMode();
 
-            // Hover descriptions (uses your UITextButton hover callback fields)
-            HookDesc(dmgBtn, "Damage: +2 bonus damage per rank (bonus is capped by progression).");
-            HookDesc(spdBtn, "Speed: improves dash/handling (match your minion AI tuning).");
-            HookDesc(lscBtn, "Lifesteal chance: increases % chance to heal on hit.");
-            HookDesc(lsaBtn, "Lifesteal amount: increases how much HP you heal when lifesteal triggers.");
-            HookDesc(focusBtn, "Focus: keeps knives committed to the same target longer.");
-
-            HookDesc(ifrBtn, "Immunity: lowers local NPC hit cooldown (hits connect more often).");
-
+            // Hover descriptions (short, readable; the button text contains exact numbers)
+            HookDesc(dmgBtn, "Damage: +2 bonus minion damage per rank (bonus is capped by progression).");
+            HookDesc(spdBtn, "Speed: improves movement feel; caps at 50 ranks with diminishing returns.");
+            HookDesc(lscBtn, "Lifesteal chance: chance to heal on hit (capped at 100%).");
+            HookDesc(lsaBtn, "Lifesteal amount: heals a % of damage dealt (starts tiny, caps slightly OP).");
+            HookDesc(ifrBtn, "Immunity: lowers local NPC hit cooldown; minimum is 6 ticks.");
             HookDesc(targetBtn, "Switch targeting: closest-to-player vs closest-to-minion.");
+
             HookDesc(refundBtn, "Refunds all spent upgrade points (keeps your level/XP).");
             HookDesc(closeBtn, "Closes this menu.");
         }
@@ -150,8 +135,7 @@ namespace VampireSummonRedux.Common.UI
 
         private void SetDesc(string text)
         {
-            if (descText != null)
-                descText.SetText(text);
+            descText?.SetText(text);
         }
 
         public override void Update(GameTime gameTime)
@@ -160,7 +144,7 @@ namespace VampireSummonRedux.Common.UI
 
             Player p = Main.LocalPlayer;
 
-            // Close the UI if not holding the summon
+            // Close if not holding the summon weapon
             if (!(p.HeldItem?.ModItem is VampireKnives))
             {
                 VampireUpgradeUISystem.Toggle();
@@ -170,7 +154,6 @@ namespace VampireSummonRedux.Common.UI
             UpdateTextAndButtons();
         }
 
-        // --- helpers for more informative UI ---
         private static int GCD(int a, int b)
         {
             a = Math.Abs(a);
@@ -191,24 +174,6 @@ namespace VampireSummonRedux.Common.UI
             return $"{percent / g}/{100 / g}";
         }
 
-        private int GetCost(VampireSummonReduxPlayer mp, UpgradeType type)
-        {
-            // Keep your existing economy callsite.
-            // If your config field names differ, update these two field names accordingly.
-            var cfg = ModContent.GetInstance<VampireSummonRedux.Common.Config.VampireSummonReduxConfig>();
-
-            int rank =
-            type == UpgradeType.Damage ? mp.DamageRank :
-            type == UpgradeType.Speed ? mp.SpeedRank :
-            type == UpgradeType.LifestealChance ? mp.LifestealChanceRank :
-            type == UpgradeType.LifestealAmount ? mp.LifestealAmountRank :
-            type == UpgradeType.FocusSameTarget ? mp.FocusSameTargetRank :
-            type == UpgradeType.ImmunityFrames ? mp.ImmunityRank :
-            0;
-
-            return cfg.BaseUpgradeCost + cfg.UpgradeCostPerRank * rank;
-        }
-
         private void UpdateTextAndButtons()
         {
             Player p = Main.LocalPlayer;
@@ -217,40 +182,41 @@ namespace VampireSummonRedux.Common.UI
             pointsLine.SetText($"Upgrade Points: {mp.UpgradePoints}");
             xpLine.SetText($"Level: {mp.Level} | XP: {mp.XP}");
 
-            int dmgCost = GetCost(mp, UpgradeType.Damage);
-            int spdCost = GetCost(mp, UpgradeType.Speed);
-            int lscCost = GetCost(mp, UpgradeType.LifestealChance);
-            int lsaCost = GetCost(mp, UpgradeType.LifestealAmount);
-            int focCost = GetCost(mp, UpgradeType.FocusSameTarget);
-            int ifrCost = GetCost(mp, UpgradeType.ImmunityFrames);
+            // Costs are computed by the player, so UI stays consistent with backend
+            int dmgCost = mp.GetUpgradeCost(UpgradeType.Damage);
+            int spdCost = mp.GetUpgradeCost(UpgradeType.Speed);
+            int lscCost = mp.GetUpgradeCost(UpgradeType.LifestealChance);
+            int lsaCost = mp.GetUpgradeCost(UpgradeType.LifestealAmount);
+            int ifrCost = mp.GetUpgradeCost(UpgradeType.ImmunityFrames);
 
-            // --- computed display values ---
-            int dmgTotal = mp.DamageRank * DamagePerRank;
+            // Display values
+            const int dmgPerRank = 2;
+            int dmgTotal = mp.DamageRank * dmgPerRank;
 
-            int lscPercent = mp.LifestealChanceRank * LifestealChancePerRankPercent; // matches your minion: rank*2%
-            string lscFrac = ChanceAsFraction(lscPercent);
+            int lscPct = mp.GetLifestealChancePercent();
+            string lscFrac = ChanceAsFraction(lscPct);
 
-            int healAmount = LifestealBaseHeal + mp.LifestealAmountRank * LifestealHealPerRank;
+            float lsaPct = mp.GetLifestealHealPercent() * 100f;
 
-            int hitCd = Math.Max(ImmunityMinCooldown, ImmunityBaseCooldown - mp.ImmunityRank * ImmunityCooldownDownPerRank);
+            int cd = mp.GetLocalHitCooldownTicks();
 
-            // --- button labels (include exact per-rank + cumulative) ---
-            dmgBtn.SetText($"Damage | R:{mp.DamageRank} | Cost:{dmgCost} | +{DamagePerRank}/r (Tot +{dmgTotal})");
-            spdBtn.SetText($"Speed | R:{mp.SpeedRank} | Cost:{spdCost}");
-            lscBtn.SetText($"Lifesteal % | R:{mp.LifestealChanceRank} | Cost:{lscCost} | {lscPercent}% ({lscFrac})");
-            lsaBtn.SetText($"Lifesteal + | R:{mp.LifestealAmountRank} | Cost:{lsaCost} | Heal {healAmount} HP");
-            focusBtn.SetText($"Focus | R:{mp.FocusSameTargetRank} | Cost:{focCost}");
-            ifrBtn.SetText($"I-Frames | R:{mp.ImmunityRank} | Cost:{ifrCost} | CD {hitCd}t");
+            int plateauPct = (int)(mp.GetSpeedPlateau01() * 100f);
+
+            // Button labels (compact but detailed)
+            dmgBtn.SetText($"Damage | R:{mp.DamageRank} | Cost:{dmgCost} | +{dmgPerRank}/r (Tot +{dmgTotal})");
+            spdBtn.SetText($"Speed | R:{mp.SpeedRank}/50 | Cost:{spdCost} | Plateau {plateauPct}%");
+            lscBtn.SetText($"Lifesteal % | R:{mp.LifestealChanceRank} | Cost:{lscCost} | {lscPct}% ({lscFrac})");
+            lsaBtn.SetText($"Lifesteal Amt | R:{mp.LifestealAmountRank} | Cost:{lsaCost} | {lsaPct:0.##}% dmg");
+            ifrBtn.SetText($"I-Frames | R:{mp.ImmunityRank} | Cost:{ifrCost} | CD {cd}t");
 
             targetBtn.SetText($"Targeting: {mp.TargetMode}");
 
-            // Enable/disable based on points
-            dmgBtn.SetEnabled(mp.UpgradePoints >= dmgCost);
-            spdBtn.SetEnabled(mp.UpgradePoints >= spdCost);
-            lscBtn.SetEnabled(mp.UpgradePoints >= lscCost);
-            lsaBtn.SetEnabled(mp.UpgradePoints >= lsaCost);
-            focusBtn.SetEnabled(mp.UpgradePoints >= focCost);
-            ifrBtn.SetEnabled(mp.UpgradePoints >= ifrCost);
+            // Enable/disable using backend rules (caps + cost + points)
+            dmgBtn.SetEnabled(mp.CanBuyUpgrade(UpgradeType.Damage));
+            spdBtn.SetEnabled(mp.CanBuyUpgrade(UpgradeType.Speed));
+            lscBtn.SetEnabled(mp.CanBuyUpgrade(UpgradeType.LifestealChance));
+            lsaBtn.SetEnabled(mp.CanBuyUpgrade(UpgradeType.LifestealAmount));
+            ifrBtn.SetEnabled(mp.CanBuyUpgrade(UpgradeType.ImmunityFrames));
 
             targetBtn.SetEnabled(true);
             refundBtn.SetEnabled(true);
