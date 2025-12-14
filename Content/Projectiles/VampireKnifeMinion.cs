@@ -59,6 +59,8 @@ namespace VampireSummonRedux.Content.Projectiles
             ProjectileID.Sets.MinionSacrificable[Type] = true;
         }
 
+        public override string Texture => "VampireSummonRedux/Content/Projectiles/VampireKnife";
+
         public override void SetDefaults()
         {
             Projectile.width = 30;
