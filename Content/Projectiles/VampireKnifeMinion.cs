@@ -215,8 +215,6 @@ namespace VampireSummonRedux.Content.Projectiles
             int attackCooldown = BaseAttackCooldown - mp.SpeedRank * 2;
             if (attackCooldown < 14) attackCooldown = 14;
 
-            int focusMax = 0; // Focus removed
-
             // Keep minionPos stable for nicer “slotting”
             Projectile.minionPos = GetMinionIndex(owner);
 
@@ -234,6 +232,8 @@ namespace VampireSummonRedux.Content.Projectiles
                 Projectile.velocity *= 0.1f;
                 Projectile.netUpdate = true;
             }
+
+            int targetWho = AcquireTarget(owner, mp, out bool hasTarget);
 
             // State machine
             if (!hasTarget)
