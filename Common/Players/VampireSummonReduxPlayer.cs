@@ -2,6 +2,7 @@ using System;
 using Terraria;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
+using Terraria.ModLoader.Input;
 using Terraria.ID;
 using VampireSummonRedux.Common.Config;
 using VampireSummonRedux.Common.Players;
@@ -78,6 +79,27 @@ namespace VampireSummonRedux.Common.Players
             TargetMode = TargetingMode.ClosestToPlayer;
 
             //FocusSameTargetRank = 0; // compat
+        }
+
+        public override void ProcessTriggers(TriggersSet triggersSet)
+        {
+            // Safety: keybind may be null during unload/reload edges
+            if (VampireSummonReduxMod.OpenUpgradeUIKeybind == null)
+                return;
+
+            if (!VampireSummonReduxMod.OpenUpgradeUIKeybind.JustPressed)
+                return;
+
+            // Only the local player should open UI
+            if (Main.myPlayer != Player.whoAmI)
+                return;
+
+            // Only open when holding the summon weapon
+            if (Player.HeldItem.type != ModContent.ItemType<VampireSummonRedux.Content.Items.VampireKnives>())
+                return;
+
+            // Toggle the UI
+            VampireSummonRedux.Common.UI.VampireUpgradeUISystem.Toggle();
         }
 
         public override void SaveData(TagCompound tag)
