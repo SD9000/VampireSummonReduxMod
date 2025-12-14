@@ -157,12 +157,10 @@ namespace VampireSummonRedux.Common.Players
 
         private int GetXPToNextLevel(VampireSummonReduxConfig cfg)
         {
-            // Use your existing config fields if they exist. If not, adjust here.
-            // Common pattern: base + perLevel * (Level - 1)
             const int XPToLevelBase = 50;
             const int XPToLevelPerLevel = 15;
 
-            int xpToNext = XPToLevelBase + XPToLevelPerLevel * (Level - 1);
+            return XPToLevelBase + XPToLevelPerLevel * (Level - 1);
         }
 
         // ===== Upgrade purchasing =====
