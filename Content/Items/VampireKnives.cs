@@ -1,14 +1,78 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using Terraria;
+using Terraria.ID;
 using Terraria.ModLoader;
+using Terraria.DataStructures;
 
 using VampireSummonRedux.Common.Players;
+using VampireSummonRedux.Content.Projectiles;
+using VampireSummonRedux.Content.Buffs; // <-- if your buff namespace differs, fix this line
 
 namespace VampireSummonRedux.Content.Items
 {
     public partial class VampireKnives : ModItem
     {
+        public override void SetStaticDefaults()
+        {
+            // Optional: staff-style hold (purely visual)
+            Item.staff[Type] = true;
+
+            ItemID.Sets.GamepadWholeScreenUseRange[Type] = true;
+            ItemID.Sets.LockOnIgnoresCollision[Type] = true;
+        }
+
+        public override void SetDefaults()
+        {
+            Item.width = 32;
+            Item.height = 32;
+
+            // This is what makes it “a weapon” and a summon weapon
+            Item.damage = 20; // baseline; upgrades add bonus on the minion side
+            Item.DamageType = DamageClass.Summon;
+
+            Item.mana = 10;
+            Item.useTime = 30;
+            Item.useAnimation = 30;
+            Item.useStyle = ItemUseStyleID.Swing;
+
+            Item.noMelee = true;
+            Item.knockBack = 2f;
+
+            Item.value = Item.buyPrice(gold: 5);
+            Item.rare = ItemRarityID.LightRed;
+
+            // Summon wiring
+            Item.buffType = ModContent.BuffType<VampireKnifeBuff>();      // <-- change if your buff class name differs
+            Item.shoot = ModContent.ProjectileType<VampireKnifeMinion>(); // your minion projectile
+        }
+
+        public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity,
+                                   int type, int damage, float knockback)
+        {
+            // Apply buff so the minion persists
+            player.AddBuff(Item.buffType, 2);
+
+            // Spawn minion at cursor (standard summon behavior)
+            position = Main.MouseWorld;
+
+            Projectile.NewProjectile(
+                source,
+                position,
+                Vector2.Zero,
+                type,
+                damage,
+                knockback,
+                player.whoAmI
+            );
+
+            // Prevent vanilla shooting behavior (we already spawned it)
+            return false;
+        }
+
+        // -------------------- TOOLTIP (your existing code) --------------------
+
         private static int GCD(int a, int b)
         {
             a = Math.Abs(a); b = Math.Abs(b);
@@ -28,34 +92,25 @@ namespace VampireSummonRedux.Content.Items
             Player p = Main.LocalPlayer;
             var mp = p.GetModPlayer<VampireSummonReduxPlayer>();
 
-            // Damage upgrade info (your minion uses +2 per rank in UI; keep consistent here)
             const int dmgPerRank = 2;
             int bonusDmg = mp.DamageRank * dmgPerRank;
 
-            // Lifesteal
             int lsChance = mp.GetLifestealChancePercent();
             string lsFrac = ChanceAsFraction(lsChance);
             float lsAmtPct = mp.GetLifestealHealPercent() * 100f;
 
-            // Immunity (local hit cooldown ticks)
             int cd = mp.GetLocalHitCooldownTicks();
-
-            // Speed plateau
             int plateauPct = (int)(mp.GetSpeedPlateau01() * 100f);
 
-            // Insert near the end but before "Material" lines if present
             int insertIndex = tooltips.Count;
 
-            // Add a header line for clarity
             tooltips.Insert(insertIndex++, new TooltipLine(Mod, "VSR_Header", "— Upgrades —"));
 
-            // Bonus damage (note: base item damage line won't change, so show bonus explicitly)
             tooltips.Insert(insertIndex++, new TooltipLine(Mod, "VSR_Damage",
                                                            bonusDmg > 0
                                                            ? $"Bonus minion damage: +{bonusDmg} ({mp.DamageRank} ranks)"
                                                            : "Bonus minion damage: +0"));
 
-            // Lifesteal summary
             if (lsChance > 0 || lsAmtPct > 0f)
             {
                 tooltips.Insert(insertIndex++, new TooltipLine(Mod, "VSR_Lifesteal",
@@ -67,19 +122,16 @@ namespace VampireSummonRedux.Content.Items
                                                                "Lifesteal: 0% chance • heals 0% of damage"));
             }
 
-            // Immunity summary
             tooltips.Insert(insertIndex++, new TooltipLine(Mod, "VSR_Immunity",
                                                            mp.ImmunityRank > 0
                                                            ? $"Hit cooldown: {cd} ticks (local NPC immunity) ({mp.ImmunityRank} ranks)"
                                                            : $"Hit cooldown: {cd} ticks (local NPC immunity)"));
 
-            // Speed summary (doesn't promise exact value because actual speed is applied in minion AI)
             tooltips.Insert(insertIndex++, new TooltipLine(Mod, "VSR_Speed",
                                                            mp.SpeedRank > 0
                                                            ? $"Speed: {mp.SpeedRank}/50 ranks • plateau {plateauPct}%"
                                                            : "Speed: 0/50 ranks"));
 
-            // Targeting note (since you’ve got player/minion targeting)
             tooltips.Insert(insertIndex++, new TooltipLine(Mod, "VSR_Targeting",
                                                            $"Targeting mode: {mp.TargetMode}"));
         }
