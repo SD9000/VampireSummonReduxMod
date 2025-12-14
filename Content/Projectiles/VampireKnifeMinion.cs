@@ -408,8 +408,19 @@ namespace VampireSummonRedux.Content.Projectiles
             int count = GetMinionCount(owner);
             if (count <= 0) count = 1;
 
+            // Anchor point above the player's head (stable, doesn't wobble with slopes)
+            Vector2 center = owner.Center + new Vector2(0f, -48f);
+
+            // Orbit angle for this knife
+            // Main.GameUpdateCount gives smooth rotation over time
+            float t = Main.GameUpdateCount * 0.035f;
+            float angle = t + MathHelper.TwoPi * (index / (float)count);
+
+            // "Depth" illusion (front/back)
+            float depth = (float)System.Math.Sin(angle); // -1..1
+
             // tune these
-            float baseRx = 22f;      // how tight 1 knife is
+            float baseRx = 22f;       // how tight 1 knife is
             float addPerKnife = 2.5f; // how much wider each extra knife makes it
             float rx = baseRx + (count - 1) * addPerKnife;
             rx = MathHelper.Clamp(rx, 18f, 36f);

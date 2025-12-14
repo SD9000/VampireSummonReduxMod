@@ -24,6 +24,7 @@ namespace VampireSummonRedux.Common.Players
         LifestealChance,
         LifestealAmount,
         FocusSameTarget,
+        ImmunityFrames,
         ToggleTargetingMode
     }
 
@@ -38,6 +39,7 @@ namespace VampireSummonRedux.Common.Players
         public int LifestealChanceRank = 0;
         public int LifestealAmountRank = 0;
         public int FocusSameTargetRank = 0;
+        public int ImmunityRank = 0;
 
         public TargetingMode TargetMode = TargetingMode.ClosestToPlayer;
 
@@ -88,6 +90,9 @@ namespace VampireSummonRedux.Common.Players
                     return TrySpendAndInc(ref LifestealAmountRank);
                 case UpgradeType.FocusSameTarget:
                     return TrySpendAndInc(ref FocusSameTargetRank);
+                case UpgradeType.ImmunityFrames:
+                    ImmunityRank++;
+                    break;
                 case UpgradeType.ToggleTargetingMode:
                     TargetMode = (TargetMode == TargetingMode.ClosestToPlayer) ? TargetingMode.ClosestToMinion : TargetingMode.ClosestToPlayer;
                     return true;
@@ -114,6 +119,7 @@ namespace VampireSummonRedux.Common.Players
             LifestealChanceRank = 0;
             LifestealAmountRank = 0;
             FocusSameTargetRank = 0;
+            ImmunityRank = 0;
 
             // Give player back all points they've earned from leveling
             var cfg = ModContent.GetInstance<VampireSummonReduxConfig>();
