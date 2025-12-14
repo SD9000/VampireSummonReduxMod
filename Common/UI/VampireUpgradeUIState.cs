@@ -22,7 +22,7 @@ namespace VampireSummonRedux.Common.UI
 
         private UITextButton dmgBtn, spdBtn, lscBtn, lsaBtn, focusBtn, targetBtn, refundBtn, closeBtn;
 
-        private const float BtnTextScale = 0.50f;
+        private const float BtnTextScale = 0.60f;
 
         public override void OnInitialize()
         {
