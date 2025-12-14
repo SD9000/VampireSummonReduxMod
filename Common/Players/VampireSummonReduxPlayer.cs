@@ -1,8 +1,8 @@
 using System;
 using Terraria;
+using Terraria.GameInput;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
-using Terraria.ModLoader.Input;
 using Terraria.ID;
 using VampireSummonRedux.Common.Config;
 using VampireSummonRedux.Common.Players;
@@ -84,10 +84,10 @@ namespace VampireSummonRedux.Common.Players
         public override void ProcessTriggers(TriggersSet triggersSet)
         {
             // Safety: keybind may be null during unload/reload edges
-            if (VampireSummonReduxMod.OpenUpgradeUIKeybind == null)
+            if (VampireSummonReduxMod.OpenUpgradeMenu == null)
                 return;
 
-            if (!VampireSummonReduxMod.OpenUpgradeUIKeybind.JustPressed)
+            if (!VampireSummonReduxMod.OpenUpgradeMenu.JustPressed)
                 return;
 
             // Only the local player should open UI

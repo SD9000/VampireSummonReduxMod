@@ -1,6 +1,7 @@
 using System.IO;
 using Terraria;
 using Terraria.ID;
+using Terraria.GameInput;
 using Terraria.ModLoader;
 using VampireSummonRedux.Common.Players;
 using VampireSummonRedux.Common.Net;
