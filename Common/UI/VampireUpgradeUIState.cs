@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.UI;
+using Terraria.ID;
 using Terraria.GameContent.UI.Elements;
 using VampireSummonRedux.Common.Players;
 using VampireSummonRedux.Common.Config;
@@ -16,7 +17,7 @@ namespace VampireSummonRedux.Common.UI
         private UIText xpLine;
         private UIText pointsLine;
 
-        private UITextButton dmgBtn, spdBtn, lscBtn, lsaBtn, focusBtn, targetBtn, closeBtn;
+        private UITextButton dmgBtn, spdBtn, lscBtn, lsaBtn, focusBtn, targetBtn, refundBtn, closeBtn;
 
         public override void OnInitialize()
         {
