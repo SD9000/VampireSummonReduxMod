@@ -11,7 +11,7 @@ namespace VampireSummonRedux.Common.UI
 {
     public class VampireUpgradeUIState : UIState
     {
-        private UIPanel panel;
+        private UIDraggablePanel panel;
         private UIText header;
         private UIText xpLine;
         private UIText pointsLine;
@@ -20,14 +20,17 @@ namespace VampireSummonRedux.Common.UI
 
         public override void OnInitialize()
         {
-            panel = new UIPanel();
+            panel = new UIDraggablePanel();
             panel.SetPadding(12);
-            panel.Width.Set(460, 0);
-            panel.Height.Set(360, 0);
-            panel.Left.Set(0, 0.5f);
-            panel.Top.Set(0, 0.5f);
-            panel.HAlign = 0.5f;
-            panel.VAlign = 0.5f;
+
+            float w = 460f;
+            float h = 360f;
+            panel.Width.Set(w, 0f);
+            panel.Height.Set(h, 0f);
+
+            // True center with pixel offsets (this is the fix)
+            panel.Left.Set(-w / 2f, 0.5f);
+            panel.Top.Set(-h / 2f, 0.5f);
 
             header = new UIText("Vampire Summon Upgrades");
             header.Top.Set(0, 0);

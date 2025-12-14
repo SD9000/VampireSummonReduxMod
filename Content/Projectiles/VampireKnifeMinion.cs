@@ -34,7 +34,8 @@ namespace VampireSummonRedux.Content.Projectiles
 
         // States
         private const int StateIdle = 0;
-        private const int StateDash = 1;
+        private const int StateDashForward = 1;
+        private const int StateDashBack = 2;
 
         // ai[0] = state
         // ai[1] = attackTimer (counts down; when 0, can attack)
@@ -90,6 +91,18 @@ namespace VampireSummonRedux.Content.Projectiles
 
         public override bool? CanCutTiles() => false;
 
+        private int GetMinionCount(Player owner)
+        {
+            int count = 0;
+            for (int i = 0; i < Main.maxProjectiles; i++)
+            {
+                Projectile p = Main.projectile[i];
+                if (p.active && p.owner == owner.whoAmI && p.type == Type)
+                    count++;
+            }
+            return count;
+        }
+
         // -----------------------------
         // XP + lifesteal (unchanged)
         // -----------------------------
@@ -117,7 +130,7 @@ namespace VampireSummonRedux.Content.Projectiles
                     mp.AddXP(cfg.XpPerKill);
             }
 
-            int chancePercent = mp.LifestealChanceRank * 2;
+            int chancePercent = 2 + mp.LifestealChanceRank * 2;
             int healAmount = 1 + mp.LifestealAmountRank;
 
             if (chancePercent > 0 && Main.rand.Next(100) < chancePercent)
@@ -240,8 +253,8 @@ namespace VampireSummonRedux.Content.Projectiles
                 // If close enough and cooldown is ready, stab
                 if (distToTarget <= StabStartDistance && Projectile.ai[1] <= 0f)
                 {
-                    Projectile.ai[0] = StateDash;
-                    Projectile.ai[1] = attackCooldown; // reset cooldown now
+                    Projectile.ai[0] = StateDashForward;
+                    Projectile.ai[1] = attackCooldown;// reset cooldown now
                     Projectile.netUpdate = true;
                 }
                 else
@@ -255,17 +268,28 @@ namespace VampireSummonRedux.Content.Projectiles
                 }
             }
 
-            if (Projectile.ai[0] == StateDash)
+            if (Projectile.ai[0] == StateDashForward)
             {
-                // Dash straight through the target
                 Vector2 toTarget = target.Center - Projectile.Center;
-                Vector2 desiredVel = toTarget.SafeNormalize(Vector2.UnitX) * dashSpeed * 1.35f;
-                Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVel, 0.35f + mp.SpeedRank * 0.02f);
-
+                Vector2 desiredVel = toTarget.SafeNormalize(Vector2.UnitX) * dashSpeed * 1.45f;
+                Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVel, 0.45f + mp.SpeedRank * 0.02f);
                 FaceVelocity();
 
-                // End dash once we’re basically on top of the target or passed close
-                if (distToTarget <= StabEndDistance || !target.active || target.friendly || target.dontTakeDamage)
+                // when we reach/pierce the target area, reverse for the “back-and-forth” slash
+                if (distToTarget <= StabEndDistance)
+                {
+                    Projectile.velocity *= -1f;          // instant reverse along same line
+                    Projectile.ai[0] = StateDashBack;
+                    Projectile.netUpdate = true;
+                }
+            }
+            else if (Projectile.ai[0] == StateDashBack)
+            {
+                // Keep moving away briefly, then return to idle/orbit
+                FaceVelocity();
+
+                // once we've pulled away from target enough, end the combo
+                if (distToTarget >= 140f || !target.active || target.friendly || target.dontTakeDamage)
                 {
                     Projectile.ai[0] = StateIdle;
                 }
@@ -310,12 +334,20 @@ namespace VampireSummonRedux.Content.Projectiles
 
         private Vector2 GetIdlePosition(Player owner, int index)
         {
-            // Spread daggers around player in a small arc
-            float angle = MathHelper.ToRadians(-90f) + index * 0.45f;
-            Vector2 offset = new Vector2((float)System.Math.Cos(angle), (float)System.Math.Sin(angle)) * IdleHoverRadius;
+            int count = GetMinionCount(owner);
+            if (count <= 0) count = 1;
 
-            // Slightly above player center feels like Blade Staff
-            return owner.Center + offset + new Vector2(0f, -30f);
+            // Blade Staff “above head” feel
+            Vector2 center = owner.Center + new Vector2(0f, -70f);
+
+            // Orbit speed and radius
+            float orbitRadius = 34f;
+            float orbitSpeed = 0.045f; // increase for faster spin
+
+            float t = Main.GameUpdateCount * orbitSpeed;
+            float angle = t + (MathHelper.TwoPi * index / count);
+
+            return center + new Vector2((float)System.Math.Cos(angle), (float)System.Math.Sin(angle)) * orbitRadius;
         }
 
         private int GetMinionIndex(Player owner)
