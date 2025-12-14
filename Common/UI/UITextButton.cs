@@ -13,7 +13,7 @@ namespace VampireSummonRedux.Common.UI
         public UITextButton(string text)
         {
             SetPadding(8);
-            _text = new UIText(text, 0.75f, false);
+            _text = new UIText(text, 0.50f, false);
             Append(_text);
         }
 
