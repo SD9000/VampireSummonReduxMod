@@ -4,6 +4,7 @@ using Terraria.ModLoader;
 using Terraria.ID;
 using VampireSummonRedux.Common.Players;
 using VampireSummonRedux.Common.Config;
+using VampireSummonRedux.Common.Net;
 
 namespace VampireSummonRedux.Content.Projectiles
 {

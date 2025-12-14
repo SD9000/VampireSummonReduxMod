@@ -5,6 +5,7 @@ using Terraria.GameContent.UI.Elements;
 using VampireSummonRedux.Common.Players;
 using VampireSummonRedux.Common.Config;
 using VampireSummonRedux.Content.Items;
+using VampireSummonRedux.Common.Net;
 
 namespace VampireSummonRedux.Common.UI
 {
