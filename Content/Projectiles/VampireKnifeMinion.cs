@@ -12,7 +12,7 @@ namespace VampireSummonRedux.Content.Projectiles
     {
         // --- AI tuning knobs ---
         private const float IdleInertia = 14f;          // higher = smoother/slower turns
-        private const float ReturnSpeed = 14f;          // when too far from owner
+        private const float ReturnSpeed = 9f;          // when too far from owner
         private const float IdleHoverRadius = 56f;      // spacing around player
         private const float TargetSearchRange = 900f;
         private const float IdleRotation = MathHelper.PiOver2; // 90 degrees
@@ -26,8 +26,8 @@ namespace VampireSummonRedux.Content.Projectiles
         private const float AttackRotationOffset = MathHelper.PiOver2;
 
         // Base dash / accel; speed upgrades add to these
-        private const float BaseDashSpeed = 18f;
-        private const float BaseAccel = 0.55f;
+        private const float BaseDashSpeed = 11f;
+        private const float BaseAccel = 0.18f;
 
         // Cooldown between stabs; speed upgrades reduce it
         private const int BaseAttackCooldown = 32;
@@ -195,7 +195,8 @@ namespace VampireSummonRedux.Content.Projectiles
 
             Projectile.timeLeft = 2;
             // Default: upright dagger (pointing up/down)
-            Projectile.rotation = IdleRotation;
+            if ((int)Projectile.ai[0] == StateIdle)
+                Projectile.rotation = IdleRotation;
 
             var mp = owner.GetModPlayer<VampireSummonReduxPlayer>();
 
@@ -203,8 +204,8 @@ namespace VampireSummonRedux.Content.Projectiles
             // Keep extraUpdates modest; it can get expensive in MP.
             Projectile.extraUpdates = 1 + (mp.SpeedRank >= 3 ? 1 : 0); // 1 normally, 2 after rank 3
 
-            float dashSpeed = BaseDashSpeed + mp.SpeedRank * 1.2f;
-            float accel = BaseAccel + mp.SpeedRank * 0.06f;
+            float dashSpeed = BaseDashSpeed + mp.SpeedRank * 0.7f;
+            float accel = BaseAccel + mp.SpeedRank * 0.03f;
 
             int attackCooldown = BaseAttackCooldown - mp.SpeedRank * 2;
             if (attackCooldown < 14) attackCooldown = 14;
@@ -266,7 +267,6 @@ namespace VampireSummonRedux.Content.Projectiles
                 // Reposition near the target before dashing
                 Vector2 hoverNearTarget = target.Center + new Vector2(0, -60f);
                 Vector2 toHover = hoverNearTarget - Projectile.Center;
-                FaceVelocityForAttack();
 
                 // If close enough and cooldown is ready, stab
                 if (distToTarget <= StabStartDistance && Projectile.ai[1] <= 0f)
@@ -292,18 +292,23 @@ namespace VampireSummonRedux.Content.Projectiles
                 Vector2 dir = (target.Center - Projectile.Center).SafeNormalize(Vector2.UnitX);
 
                 // Commit to speed (less lerp = more hits)
-                Projectile.velocity = dir * dashSpeed * 1.55f;
+                Vector2 desired = dir * dashSpeed * 1.35f;
+                Projectile.velocity = Vector2.Lerp(Projectile.velocity, desired, 0.35f);
 
                 float dot = Vector2.Dot(target.Center - Projectile.Center, Projectile.velocity);
-                // dot flips sign when we pass the target
-                if (DashDot != 0f && dot > DashDot)
+
+                // If we passed the target, dot goes <= 0 (we're moving away from target relative to our velocity)
+                if (dot <= 0f)
                 {
-                    // passed target -> reverse dash
                     Projectile.velocity *= -1f;
                     Projectile.ai[0] = StateDashBack;
                     Projectile.netUpdate = true;
+                    DashDot = 0f; // reset for next cycle
                 }
-                DashDot = dot;
+                else
+                {
+                    DashDot = dot;
+                }
             }
             else if (Projectile.ai[0] == StateDashBack)
             {
@@ -336,14 +341,30 @@ namespace VampireSummonRedux.Content.Projectiles
                 return;
             }
 
-            float speed = dist > 300f ? ReturnSpeed : 10f;
+            // Slow down as we get close so we don't overshoot and rebound
+            float speed;
+            if (dist > 300f)
+            {
+                speed = ReturnSpeed;
+            }
+            else
+            {
+                // 0..1 as we approach 0..300 pixels
+                float t = dist / 300f;
+
+                // Near the idle point, we want a gentle crawl; far away, we want ReturnSpeed.
+                speed = MathHelper.Lerp(2.25f, ReturnSpeed, t);
+            }
+
             Vector2 desiredVel = toIdle.SafeNormalize(Vector2.Zero) * speed;
 
-            // Smooth approach
-            Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVel, 0.08f);
+            // Smooth approach (slightly stronger than before)
+            Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVel, 0.10f);
 
+            // IMPORTANT: remove bobbing entirely to keep the orbit clean
+            // (comment out your existing sine bob line)
             // Optional: tiny bob only while moving (safe)
-            Projectile.velocity.Y += (float)System.Math.Sin(Main.GameUpdateCount * 0.06f) * 0.02f;
+            //Projectile.velocity.Y += (float)System.Math.Sin(Main.GameUpdateCount * 0.06f) * 0.02f;
         }
 
         private void FaceVelocity()
