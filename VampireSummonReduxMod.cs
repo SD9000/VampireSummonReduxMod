@@ -30,6 +30,7 @@ namespace VampireSummonRedux
         public override void HandlePacket(BinaryReader reader, int whoAmI)
         {
             VampirePacketType type = (VampirePacketType)reader.ReadByte();
+            VampireSummonRedux.Common.Net.VampireSummonReduxNet.HandlePacket(reader, whoAmI);
 
             switch (type)
             {
