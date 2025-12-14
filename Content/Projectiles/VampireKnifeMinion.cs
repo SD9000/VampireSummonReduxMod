@@ -13,7 +13,7 @@ namespace VampireSummonRedux.Content.Projectiles
         // --- AI tuning knobs ---
         private const float IdleInertia = 14f;          // higher = smoother/slower turns
         private const float ReturnSpeed = 14f;          // when too far from owner
-        private const float IdleHoverRadius = 56f;      // spacing around player
+        private const float IdleHoverRadius = 72f;      // spacing around player
         private const float TargetSearchRange = 900f;
 
         // Attack pattern (Blade Staff-ish): reposition near target, then dash through
@@ -275,16 +275,31 @@ namespace VampireSummonRedux.Content.Projectiles
         private void DoIdle(Vector2 idlePos, float accel)
         {
             Vector2 toIdle = idlePos - Projectile.Center;
+            float dist = toIdle.Length();
 
-            // Gentle hover movement
-            float speed = toIdle.Length() > 300f ? ReturnSpeed : 10f;
+            // If we're basically at the idle spot, stop moving to prevent jitter.
+            if (dist < 6f)
+            {
+                Projectile.velocity *= 0.85f;
+
+                if (Projectile.velocity.Length() < 0.15f)
+                {
+                    Projectile.Center = idlePos;          // snap to exact pixel-ish position
+                    Projectile.velocity = Vector2.Zero;
+                }
+
+                // Don't bob when settled (bobbing causes visible vibration)
+                return;
+            }
+
+            float speed = dist > 300f ? ReturnSpeed : 10f;
             Vector2 desiredVel = toIdle.SafeNormalize(Vector2.Zero) * speed;
 
-            // Inertia-based movement (smooth)
-            Projectile.velocity = (Projectile.velocity * (IdleInertia - 1f) + desiredVel) / IdleInertia;
+            // Smooth approach
+            Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVel, 0.08f);
 
-            // Tiny bob so it feels alive
-            Projectile.velocity.Y += (float)System.Math.Sin(Main.GameUpdateCount * 0.08f) * 0.05f;
+            // Optional: tiny bob only while moving (safe)
+            Projectile.velocity.Y += (float)System.Math.Sin(Main.GameUpdateCount * 0.06f) * 0.02f;
         }
 
         private void FaceVelocity()
@@ -377,7 +392,22 @@ namespace VampireSummonRedux.Content.Projectiles
 
         private bool IsValidTarget(NPC n)
         {
-            return n != null && n.active && !n.friendly && !n.dontTakeDamage && n.lifeMax > 5;
+            if (n == null || !n.active)
+                return false;
+
+            // Don't attack target dummies
+            if (n.type == NPCID.TargetDummy)
+                return false;
+
+            // Standard minion rules
+            if (n.friendly || n.dontTakeDamage)
+                return false;
+
+            // Extra safety
+            if (n.lifeMax <= 5)
+                return false;
+
+            return true;
         }
     }
 }
