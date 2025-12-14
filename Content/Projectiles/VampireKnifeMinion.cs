@@ -244,7 +244,7 @@ namespace VampireSummonRedux.Content.Projectiles
             // Decide whether to dash or reposition
             float distToTarget = Vector2.Distance(Projectile.Center, target.Center);
 
-            if (Projectile.ai[0] != StateDash)
+            if (Projectile.ai[0] != StateDashForward && Projectile.ai[0] != StateDashBack)
             {
                 // Reposition near the target before dashing
                 Vector2 hoverNearTarget = target.Center + new Vector2(0, -60f);
