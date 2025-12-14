@@ -180,7 +180,7 @@ namespace VampireSummonRedux.Common.Players
                 UpgradeType.ImmunityFrames => ImmunityRank,
 
                 // Focus removed
-                UpgradeType.//FocusSameTarget => 0,
+                //UpgradeType.//FocusSameTarget => 0,
 
                 _ => 0
             };
