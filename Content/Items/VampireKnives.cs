@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using Terraria;
-using Terraria.ID;
 using Terraria.ModLoader;
+using VampireSummonRedux.Common.Players;
+using Terraria.ID;
 using Microsoft.Xna.Framework;
 
 namespace VampireSummonRedux.Content.Items
@@ -12,6 +14,16 @@ namespace VampireSummonRedux.Content.Items
             // Lets right-clicking on enemies (minion targeting) work nicely.
             ItemID.Sets.LockOnIgnoresCollision[Type] = true;
             ItemID.Sets.StaffMinionSlotsRequired[Type] = 1f;
+        }
+
+        public override void ModifyTooltips(List<TooltipLine> tooltips)
+        {
+            var mp = Main.LocalPlayer.GetModPlayer<VampireSummonReduxPlayer>();
+
+            int bonus = mp.DamageRank * 2; // MUST match your projectile bonus formula
+
+            if (bonus > 0)
+                tooltips.Add(new TooltipLine(Mod, "VSRBonusDamage", $"+{bonus} bonus minion damage (from upgrades)"));
         }
 
         public override void SetDefaults()

@@ -1,78 +1,216 @@
 using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.UI;
 using Terraria.ID;
+using Terraria.ModLoader;
+using Terraria.UI;
 using Terraria.GameContent.UI.Elements;
-using VampireSummonRedux.Common.Players;
-using VampireSummonRedux.Common.Config;
-using VampireSummonRedux.Content.Items;
+
 using VampireSummonRedux.Common.Net;
+using VampireSummonRedux.Common.Players;
+using VampireSummonRedux.Content.Items;
 
 namespace VampireSummonRedux.Common.UI
 {
     public class VampireUpgradeUIState : UIState
     {
         private UIDraggablePanel panel;
-        private UIText header;
-        private UIText xpLine;
+
+        private UIText titleText;
         private UIText pointsLine;
+        private UIText xpLine;
+        private UIText descText;
 
         private UITextButton dmgBtn, spdBtn, lscBtn, lsaBtn, focusBtn, targetBtn, refundBtn, closeBtn;
+
+        private const float TextScale = 0.5f;
 
         public override void OnInitialize()
         {
             panel = new UIDraggablePanel();
             panel.SetPadding(12);
 
-            float w = 460f;
-            float h = 360f;
+            float w = 520f;
+            float h = 440f;
+
             panel.Width.Set(w, 0f);
             panel.Height.Set(h, 0f);
 
-            // True center with pixel offsets (this is the fix)
+            // Center it
             panel.Left.Set(-w / 2f, 0.5f);
             panel.Top.Set(-h / 2f, 0.5f);
 
-            header = new UIText("Vampire Summon Upgrades");
-            header.Top.Set(0, 0);
-            panel.Append(header);
+            Append(panel);
 
-            xpLine = new UIText("");
-            xpLine.Top.Set(36, 0);
-            panel.Append(xpLine);
+            titleText = new UIText("Vampire Knives Upgrades", 0.7f);
+            titleText.Left.Set(10, 0f);
+            titleText.Top.Set(8, 0f);
+            panel.Append(titleText);
 
-            pointsLine = new UIText("");
-            pointsLine.Top.Set(60, 0);
+            pointsLine = new UIText("", TextScale);
+            pointsLine.Left.Set(10, 0f);
+            pointsLine.Top.Set(40, 0f);
             panel.Append(pointsLine);
 
-            float y = 100;
+            xpLine = new UIText("", TextScale);
+            xpLine.Left.Set(10, 0f);
+            xpLine.Top.Set(60, 0f);
+            panel.Append(xpLine);
 
-            dmgBtn = MakeBtn(y, () => ClickBuy(UpgradeType.Damage)); y += 40;
-            spdBtn = MakeBtn(y, () => ClickBuy(UpgradeType.Speed)); y += 40;
-            lscBtn = MakeBtn(y, () => ClickBuy(UpgradeType.LifestealChance)); y += 40;
-            lsaBtn = MakeBtn(y, () => ClickBuy(UpgradeType.LifestealAmount)); y += 40;
-            focusBtn = MakeBtn(y, () => ClickBuy(UpgradeType.FocusSameTarget)); y += 40;
+            descText = new UIText("Hover an upgrade for details.", 0.6f);
+            descText.Left.Set(10, 0f);
+            descText.Top.Set(86, 0f);
+            panel.Append(descText);
 
-            targetBtn = MakeBtn(y + 10, () => ClickBuy(UpgradeType.ToggleTargetingMode));
-            panel.Append(targetBtn);
+            // --- Buttons ---
+            float y = 120f;
+            float rowH = 34f;
+            float gap = 6f;
 
-            closeBtn = new UITextButton("Close");
-            closeBtn.Width.Set(120, 0);
-            closeBtn.Height.Set(34, 0);
+            dmgBtn = MakeBtn(y, rowH); y += rowH + gap;
+            spdBtn = MakeBtn(y, rowH); y += rowH + gap;
+            lscBtn = MakeBtn(y, rowH); y += rowH + gap;
+            lsaBtn = MakeBtn(y, rowH); y += rowH + gap;
+            focusBtn = MakeBtn(y, rowH); y += rowH + gap;
+            targetBtn = MakeBtn(y, rowH); y += rowH + gap;
+
+            // bottom row
+            refundBtn = new UITextButton("Refund Upgrades", TextScale);
+            refundBtn.Width.Set(170, 0f);
+            refundBtn.Height.Set(34, 0f);
+            refundBtn.Left.Set(10, 0f);
+            refundBtn.Top.Set(-44, 1f);
+            refundBtn.OnLeftClick += (_, __) => ClickRefund();
+            panel.Append(refundBtn);
+
+            closeBtn = new UITextButton("Close", TextScale);
+            closeBtn.Width.Set(120, 0f);
+            closeBtn.Height.Set(34, 0f);
             closeBtn.Left.Set(-130, 1f);
             closeBtn.Top.Set(-44, 1f);
             closeBtn.OnLeftClick += (_, __) => VampireUpgradeUISystem.Toggle();
             panel.Append(closeBtn);
 
-            refundBtn = new UITextButton("Refund Upgrades");
-            refundBtn.Width.Set(160, 0);
-            refundBtn.Height.Set(34, 0);
-            refundBtn.Left.Set(10, 0);
-            refundBtn.Top.Set(-44, 1f);
-            refundBtn.OnLeftClick += (_, __) => ClickRefund();
-            panel.Append(refundBtn);
+            // Wire click behavior
+            dmgBtn.OnLeftClick += (_, __) => TryBuy(UpgradeType.Damage);
+            spdBtn.OnLeftClick += (_, __) => TryBuy(UpgradeType.Speed);
+            lscBtn.OnLeftClick += (_, __) => TryBuy(UpgradeType.LifestealChance);
+            lsaBtn.OnLeftClick += (_, __) => TryBuy(UpgradeType.LifestealAmount);
+            focusBtn.OnLeftClick += (_, __) => TryBuy(UpgradeType.FocusSameTarget);
+            targetBtn.OnLeftClick += (_, __) => ToggleTargetMode();
 
-            Append(panel);
+            // Mouseover descriptions
+            HookDesc(dmgBtn, "Increases minion damage (bonus capped by progression).");
+            HookDesc(spdBtn, "Improves dash speed/handling and reduces attack cooldown.");
+            HookDesc(lscBtn, "Chance to heal you when a knife hits an enemy.");
+            HookDesc(lsaBtn, "How much you heal when lifesteal triggers.");
+            HookDesc(focusBtn, "Keeps knives committed to the same target longer.");
+            HookDesc(targetBtn, "Switch targeting: closest-to-player vs closest-to-minion.");
+            HookDesc(refundBtn, "Refunds all spent upgrade points (keeps your level/XP).");
+            HookDesc(closeBtn, "Closes this menu.");
+        }
+
+        private UITextButton MakeBtn(float topPx, float heightPx)
+        {
+            var b = new UITextButton("", TextScale);
+            b.Width.Set(-24, 1f);
+            b.Height.Set(heightPx, 0f);
+            b.Left.Set(10, 0f);
+            b.Top.Set(topPx, 0f);
+            panel.Append(b);
+            return b;
+        }
+
+        private void HookDesc(UIElement el, string desc)
+        {
+            el.OnMouseOver += (_, __) => SetDesc(desc);
+            el.OnMouseOut += (_, __) => SetDesc("Hover an upgrade for details.");
+        }
+
+        private void SetDesc(string text)
+        {
+            descText?.SetText(text, 0.6f);
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            base.Update(gameTime);
+
+            var p = Main.LocalPlayer;
+
+            // If player is no longer holding the summon, close the menu
+            if (!(p.HeldItem?.ModItem is VampireKnives))
+            {
+                VampireUpgradeUISystem.Toggle();
+                return;
+            }
+
+            UpdateTextAndButtons();
+        }
+
+        private void UpdateTextAndButtons()
+        {
+            var p = Main.LocalPlayer;
+            var mp = p.GetModPlayer<VampireSummonReduxPlayer>();
+
+            pointsLine.SetText($"Upgrade Points: {mp.UpgradePoints}", TextScale);
+
+            // Adjust these if your XP/Level fields are named differently
+            xpLine.SetText($"Level: {mp.Level} | XP: {mp.XP}", TextScale);
+
+            // Costs: adjust if your cost function differs
+            int dmgCost = mp.GetUpgradeCost(UpgradeType.Damage);
+            int spdCost = mp.GetUpgradeCost(UpgradeType.Speed);
+            int lscCost = mp.GetUpgradeCost(UpgradeType.LifestealChance);
+            int lsaCost = mp.GetUpgradeCost(UpgradeType.LifestealAmount);
+            int focCost = mp.GetUpgradeCost(UpgradeType.FocusSameTarget);
+
+            dmgBtn.SetText(Label("Damage", mp.DamageRank, dmgCost), TextScale);
+            spdBtn.SetText(Label("Speed", mp.SpeedRank, spdCost), TextScale);
+            lscBtn.SetText(Label("Lifesteal %", mp.LifestealChanceRank, lscCost), TextScale);
+            lsaBtn.SetText(Label("Lifesteal +", mp.LifestealAmountRank, lsaCost), TextScale);
+            focusBtn.SetText(Label("Focus", mp.FocusSameTargetRank, focCost), TextScale);
+
+            targetBtn.SetText($"Targeting: {mp.TargetMode}", TextScale);
+
+            // Enable/disable buttons based on points
+            dmgBtn.SetEnabled(mp.UpgradePoints >= dmgCost);
+            spdBtn.SetEnabled(mp.UpgradePoints >= spdCost);
+            lscBtn.SetEnabled(mp.UpgradePoints >= lscCost);
+            lsaBtn.SetEnabled(mp.UpgradePoints >= lsaCost);
+            focusBtn.SetEnabled(mp.UpgradePoints >= focCost);
+
+            // Target toggle and refund always enabled
+            targetBtn.SetEnabled(true);
+            refundBtn.SetEnabled(true);
+            closeBtn.SetEnabled(true);
+        }
+
+        private string Label(string name, int rank, int cost)
+        => $"{name} | Rank: {rank} | Cost: {cost}";
+
+        private void TryBuy(UpgradeType up)
+        {
+            if (Main.netMode == NetmodeID.SinglePlayer)
+            {
+                Main.LocalPlayer.GetModPlayer<VampireSummonReduxPlayer>().TryBuyUpgrade(up);
+            }
+            else
+            {
+                VampireSummonReduxNet.SendBuyUpgrade(Main.myPlayer, up);
+            }
+        }
+
+        private void ToggleTargetMode()
+        {
+            var mp = Main.LocalPlayer.GetModPlayer<VampireSummonReduxPlayer>();
+
+            // Flip mode locally; server will be told by your existing sync logic
+            mp.TargetMode = (mp.TargetMode == TargetingMode.ClosestToPlayer)
+            ? TargetingMode.ClosestToMinion
+            : TargetingMode.ClosestToPlayer;
+
+            if (Main.netMode == NetmodeID.MultiplayerClient)
+                VampireSummonReduxNet.SendFullSyncRequest(Main.myPlayer);
         }
 
         private void ClickRefund()
@@ -84,73 +222,6 @@ namespace VampireSummonRedux.Common.UI
             else
             {
                 VampireSummonReduxNet.SendRefund(Main.myPlayer);
-            }
-        }
-
-        private UITextButton MakeBtn(float top, System.Action onClick)
-        {
-            var b = new UITextButton("...");
-            b.Width.Set(-20, 1f);
-            b.Height.Set(34, 0);
-            b.Left.Set(10, 0);
-            b.Top.Set(top, 0);
-            b.OnLeftClick += (_, __) => onClick();
-            panel.Append(b);
-            return b;
-        }
-
-        public override void Update(Microsoft.Xna.Framework.GameTime gameTime)
-        {
-            base.Update(gameTime);
-
-            Player p = Main.LocalPlayer;
-
-            // auto-close if not holding staff anymore
-            if (!(p.HeldItem?.ModItem is VampireKnives))
-            {
-                VampireUpgradeUISystem.Toggle();
-                return;
-            }
-
-            var mp = p.GetModPlayer<VampireSummonReduxPlayer>();
-            var cfg = Terraria.ModLoader.ModContent.GetInstance<VampireSummonReduxConfig>();
-
-            xpLine.SetText($"Level: {mp.Level}    XP: {mp.XP}/{mp.XPToNextLevel()}");
-            pointsLine.SetText($"Upgrade Points: {mp.UpgradePoints}");
-
-            dmgBtn.SetText(Label("Damage", mp.DamageRank, mp.UpgradeCost(mp.DamageRank),
-                                 "Increases minion damage (bonus capped by progression)."));
-
-            spdBtn.SetText(Label("Speed", mp.SpeedRank, mp.UpgradeCost(mp.SpeedRank),
-                                 "Speeds up movement/attack responsiveness."));
-
-            lscBtn.SetText(Label("Lifesteal Chance", mp.LifestealChanceRank, mp.UpgradeCost(mp.LifestealChanceRank),
-                                 "Chance to heal you on hit."));
-
-            lsaBtn.SetText(Label("Lifesteal Amount", mp.LifestealAmountRank, mp.UpgradeCost(mp.LifestealAmountRank),
-                                 "Increases heal amount when lifesteal triggers."));
-
-            focusBtn.SetText(Label("Focus Target (ticks)", mp.FocusSameTargetRank, mp.UpgradeCost(mp.FocusSameTargetRank),
-                                   "Keeps the minion committed to the same target longer."));
-
-            targetBtn.SetText($"Target Mode: {mp.TargetMode} (click to toggle)");
-        }
-
-        private string Label(string name, int rank, int cost, string desc)
-        => $"{name}  |  Rank: {rank}  |  Cost: {cost}\n{desc}";
-
-        private void ClickBuy(UpgradeType type)
-        {
-            // Singleplayer: apply directly.
-            // Multiplayer: tell server to apply.
-            if (Main.netMode == Terraria.ID.NetmodeID.SinglePlayer)
-            {
-                var mp = Main.LocalPlayer.GetModPlayer<VampireSummonReduxPlayer>();
-                mp.TryBuyUpgrade(type);
-            }
-            else
-            {
-                VampireSummonReduxNet.SendBuyUpgrade(Main.myPlayer, type);
             }
         }
     }
