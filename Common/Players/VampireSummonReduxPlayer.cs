@@ -37,8 +37,8 @@ namespace VampireSummonRedux.Common.Players
         // ===== Focus removed (compat stubs) =====
         // Keep these so the project compiles until you remove focus from UI/minion/net.
         // They do nothing and can be deleted once other files are updated.
-        [Obsolete("Focus was removed. This exists only for temporary compile compatibility.")]
-        public int //FocusSameTargetRank = 0;
+        //[Obsolete("Focus was removed. This exists only for temporary compile compatibility.")]
+        //public int //FocusSameTargetRank = 0;
 
         // ===== Tuning constants (requested behavior) =====
         // Immunity cooldown model: start at 12, -1 per rank, min 6 => max rank 6
@@ -95,7 +95,7 @@ namespace VampireSummonRedux.Common.Players
             tag["TargetMode"] = (int)TargetMode;
 
             // compat
-            tag["//FocusSameTargetRank"] = //FocusSameTargetRank;
+            //tag["//FocusSameTargetRank"] = //FocusSameTargetRank;
         }
 
         public override void LoadData(TagCompound tag)
@@ -204,8 +204,8 @@ namespace VampireSummonRedux.Common.Players
                 return false;
 
             // Focus removed
-            if (up == UpgradeType.//FocusSameTarget)
-                return false;
+            //if (up == UpgradeType.//FocusSameTarget)
+                //return false;
 
             int cost = GetUpgradeCost(up);
             return UpgradePoints >= cost;
@@ -246,11 +246,11 @@ namespace VampireSummonRedux.Common.Players
                     break;
 
                     // Focus removed
-                case UpgradeType.//FocusSameTarget:
-                default:
+                //case UpgradeType.//FocusSameTarget:
+                //default:
                     // If somehow called, refund the cost so no points are lost.
-                    UpgradePoints += cost;
-                    return false;
+                    //UpgradePoints += cost;
+                    //return false;
             }
 
             return true;
@@ -336,18 +336,5 @@ namespace VampireSummonRedux.Common.Players
     {
         ClosestToPlayer,
         ClosestToMinion
-    }
-
-    // Same deal: ensure your project enum includes ImmunityFrames and does NOT use //FocusSameTarget anymore.
-    public enum UpgradeType
-    {
-        Damage,
-        Speed,
-        LifestealChance,
-        LifestealAmount,
-        ImmunityFrames,
-
-        // Focus removed (left here only for compat if it still exists elsewhere)
-        //FocusSameTarget
     }
 }

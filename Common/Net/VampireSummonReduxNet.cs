@@ -17,7 +17,7 @@ namespace VampireSummonRedux.Common.Net
             FullSyncData
         }
 
-        private static Mod ModInstance => ModContent.GetInstance<VampireSummonRedux.VampireSummonRedux>();
+        private static Mod ModInstance => ModContent.GetInstance<VampireSummonReduxMod>();
 
         public static void SendBuyUpgrade(int whoAmI, UpgradeType up)
         {
