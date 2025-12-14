@@ -15,7 +15,7 @@ namespace VampireSummonRedux.Content.Projectiles
         private const float ReturnSpeed = 9f;          // when too far from owner
         private const float IdleHoverRadius = 56f;      // spacing around player
         private const float TargetSearchRange = 900f;
-        private const float IdleRotation = MathHelper.PiOver2; // 90 degrees
+        private const float IdleRotation = 0f; // 90 degrees MathHelper.PiOver2
 
         // Attack pattern (Blade Staff-ish): reposition near target, then dash through
         private const float EngageDistance = 360f;
