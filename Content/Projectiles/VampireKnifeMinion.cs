@@ -53,6 +53,12 @@ namespace VampireSummonRedux.Content.Projectiles
             set => Projectile.localAI[1] = value;
         }
 
+        private float DashDot
+        {
+            get => Projectile.localAI[2];
+            set => Projectile.localAI[2] = value;
+        }
+
         public override void SetStaticDefaults()
         {
             Main.projFrames[Type] = 1;
@@ -130,8 +136,8 @@ namespace VampireSummonRedux.Content.Projectiles
                     mp.AddXP(cfg.XpPerKill);
             }
 
-            int chancePercent = 2 + mp.LifestealChanceRank * 2;
-            int healAmount = 1 + mp.LifestealAmountRank;
+            int chancePercent = 2 + mp.LifestealChanceRank * 2; // base 2%
+            int healAmount = 1 + mp.LifestealAmountRank;        // base 1
 
             if (chancePercent > 0 && Main.rand.Next(100) < chancePercent)
             {
@@ -178,6 +184,7 @@ namespace VampireSummonRedux.Content.Projectiles
             }
 
             Projectile.timeLeft = 2;
+            Projectile.rotation = 0f;
 
             var mp = owner.GetModPlayer<VampireSummonReduxPlayer>();
 
@@ -222,7 +229,6 @@ namespace VampireSummonRedux.Content.Projectiles
                 FocusTicks = 0;
 
                 DoIdle(idlePos, accel);
-                FaceVelocity();
                 return;
             }
 
@@ -264,34 +270,34 @@ namespace VampireSummonRedux.Content.Projectiles
                     Vector2 desiredVel = toHover.SafeNormalize(Vector2.UnitY) * desiredSpeed;
 
                     Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVel, accel);
-                    FaceVelocity();
                 }
             }
 
             if (Projectile.ai[0] == StateDashForward)
             {
-                Vector2 toTarget = target.Center - Projectile.Center;
-                Vector2 desiredVel = toTarget.SafeNormalize(Vector2.UnitX) * dashSpeed * 1.45f;
-                Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVel, 0.45f + mp.SpeedRank * 0.02f);
-                FaceVelocity();
+                Vector2 dir = (target.Center - Projectile.Center).SafeNormalize(Vector2.UnitX);
 
-                // when we reach/pierce the target area, reverse for the “back-and-forth” slash
-                if (distToTarget <= StabEndDistance)
+                // Commit to speed (less lerp = more hits)
+                Projectile.velocity = dir * dashSpeed * 1.55f;
+
+                float dot = Vector2.Dot(target.Center - Projectile.Center, Projectile.velocity);
+                // dot flips sign when we pass the target
+                if (DashDot != 0f && dot > DashDot)
                 {
-                    Projectile.velocity *= -1f;          // instant reverse along same line
+                    // passed target -> reverse dash
+                    Projectile.velocity *= -1f;
                     Projectile.ai[0] = StateDashBack;
                     Projectile.netUpdate = true;
                 }
+                DashDot = dot;
             }
             else if (Projectile.ai[0] == StateDashBack)
             {
-                // Keep moving away briefly, then return to idle/orbit
-                FaceVelocity();
-
-                // once we've pulled away from target enough, end the combo
-                if (distToTarget >= 140f || !target.active || target.friendly || target.dontTakeDamage)
+                // keep going away a moment, then return to idle
+                if (Vector2.Distance(Projectile.Center, target.Center) > 160f || !IsValidTarget(target))
                 {
                     Projectile.ai[0] = StateIdle;
+                    DashDot = 0f;
                 }
             }
         }
@@ -337,17 +343,26 @@ namespace VampireSummonRedux.Content.Projectiles
             int count = GetMinionCount(owner);
             if (count <= 0) count = 1;
 
-            // Blade Staff “above head” feel
-            Vector2 center = owner.Center + new Vector2(0f, -70f);
+            Vector2 center = owner.MountedCenter + new Vector2(0f, -70f - owner.gfxOffY);
 
-            // Orbit speed and radius
-            float orbitRadius = 34f;
-            float orbitSpeed = 0.045f; // increase for faster spin
-
-            float t = Main.GameUpdateCount * orbitSpeed;
+            float t = Main.GameUpdateCount * 0.055f; // orbit speed
             float angle = t + (MathHelper.TwoPi * index / count);
 
-            return center + new Vector2((float)System.Math.Cos(angle), (float)System.Math.Sin(angle)) * orbitRadius;
+            // “Depth” (-1 back, +1 front)
+            float depth = (float)System.Math.Sin(angle);
+
+            // Horizontal orbit is big; vertical is small (gives the 3D-ish spin)
+            float rx = 44f;
+            float ry = 12f;
+
+            Vector2 offset = new Vector2((float)System.Math.Cos(angle) * rx, depth * ry);
+
+            // Visual depth illusion (bigger + more opaque when “front”)
+            float depth01 = (depth + 1f) * 0.5f; // 0..1
+            Projectile.scale = 0.85f + 0.30f * depth01;
+            Projectile.alpha = (int)(120f - 90f * depth01); // back is more transparent
+
+            return center + offset;
         }
 
         private int GetMinionIndex(Player owner)
