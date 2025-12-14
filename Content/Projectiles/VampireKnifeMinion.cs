@@ -16,6 +16,9 @@ namespace VampireSummonRedux.Content.Projectiles
         private const float IdleHoverRadius = 56f;      // spacing around player
         private const float TargetSearchRange = 900f;
         private const float IdleRotation = 0f; // 90 degrees MathHelper.PiOver2
+        private const int ImmunityBaseCooldown = 18;
+        private const int ImmunityCooldownDownPerRank = 1;
+        private const int ImmunityMinCooldown = 6;
 
         // Attack pattern (Blade Staff-ish): reposition near target, then dash through
         private const float EngageDistance = 360f;
@@ -71,9 +74,9 @@ namespace VampireSummonRedux.Content.Projectiles
 
         private void FaceTarget(NPC target)
         {
-            Vector2 toTarget = target.Center - Projectile.Center;
-            if (toTarget.LengthSquared() > 0.001f)
-                Projectile.rotation = toTarget.ToRotation() + AttackRotationOffset;
+            Vector2 v = target.Center - Projectile.Center;
+            if (v.LengthSquared() > 0.001f)
+                Projectile.rotation = v.ToRotation() + MathHelper.Pi + AttackRotationOffset;
         }
 
         public override void SetStaticDefaults()
@@ -161,6 +164,21 @@ namespace VampireSummonRedux.Content.Projectiles
                 owner.statLife += healAmount;
                 owner.statLife = Utils.Clamp(owner.statLife, 0, owner.statLifeMax2);
                 owner.HealEffect(healAmount, broadcast: true);
+                // Vampire Knives-style heal projectile (visual)
+                if (Main.myPlayer == owner.whoAmI)
+                {
+                    Projectile.NewProjectile(
+                        Projectile.GetSource_FromThis(),
+                                             owner.Center,
+                                             Vector2.Zero,
+                                             ProjectileID.VampireHeal,
+                                             0,
+                                             0f,
+                                             owner.whoAmI,
+                                             owner.whoAmI,  // ai0 (often used as player)
+                    healAmount     // ai1 (often used as heal amount)
+                    );
+                }
             }
         }
 
@@ -206,6 +224,11 @@ namespace VampireSummonRedux.Content.Projectiles
                 Projectile.rotation = IdleRotation;
 
             var mp = owner.GetModPlayer<VampireSummonReduxPlayer>();
+
+            Projectile.localNPCHitCooldown = System.Math.Max(
+                ImmunityMinCooldown,
+                ImmunityBaseCooldown - mp.ImmunityRank * ImmunityCooldownDownPerRank
+            );
 
             // Speed upgrade affects responsiveness + dash/cooldown.
             // Keep extraUpdates modest; it can get expensive in MP.
@@ -385,17 +408,14 @@ namespace VampireSummonRedux.Content.Projectiles
             int count = GetMinionCount(owner);
             if (count <= 0) count = 1;
 
-            Vector2 center = owner.MountedCenter + new Vector2(0f, -70f - owner.gfxOffY);
+            // tune these
+            float baseRx = 22f;      // how tight 1 knife is
+            float addPerKnife = 2.5f; // how much wider each extra knife makes it
+            float rx = baseRx + (count - 1) * addPerKnife;
+            rx = MathHelper.Clamp(rx, 18f, 36f);
 
-            float t = Main.GameUpdateCount * 0.055f; // orbit speed
-            float angle = t + (MathHelper.TwoPi * index / count);
-
-            // “Depth” (-1 back, +1 front)
-            float depth = (float)System.Math.Sin(angle);
-
-            // Horizontal orbit is big; vertical is small (gives the 3D-ish spin)
-            float rx = 30f;
-            float ry = 9f;
+            // keep depth smaller than rx
+            float ry = MathHelper.Clamp(rx * 0.28f, 6f, 12f);
 
             Vector2 offset = new Vector2((float)System.Math.Cos(angle) * rx, depth * ry);
 
