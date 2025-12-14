@@ -13,13 +13,17 @@ namespace VampireSummonRedux.Content.Projectiles
         // --- AI tuning knobs ---
         private const float IdleInertia = 14f;          // higher = smoother/slower turns
         private const float ReturnSpeed = 14f;          // when too far from owner
-        private const float IdleHoverRadius = 72f;      // spacing around player
+        private const float IdleHoverRadius = 56f;      // spacing around player
         private const float TargetSearchRange = 900f;
+        private const float IdleRotation = MathHelper.PiOver2; // 90 degrees
 
         // Attack pattern (Blade Staff-ish): reposition near target, then dash through
         private const float EngageDistance = 360f;
         private const float StabStartDistance = 220f;
         private const float StabEndDistance = 40f;
+        // Because your sprite is drawn vertical when rotation == IdleRotation,
+        // we need to offset when aligning with movement.
+        private const float AttackRotationOffset = MathHelper.PiOver2;
 
         // Base dash / accel; speed upgrades add to these
         private const float BaseDashSpeed = 18f;
@@ -57,6 +61,12 @@ namespace VampireSummonRedux.Content.Projectiles
         {
             get => Projectile.localAI[2];
             set => Projectile.localAI[2] = value;
+        }
+
+        private void FaceVelocityForAttack()
+        {
+            if (Projectile.velocity.LengthSquared() > 0.001f)
+                Projectile.rotation = Projectile.velocity.ToRotation() + AttackRotationOffset;
         }
 
         public override void SetStaticDefaults()
@@ -184,7 +194,8 @@ namespace VampireSummonRedux.Content.Projectiles
             }
 
             Projectile.timeLeft = 2;
-            Projectile.rotation = 0f;
+            // Default: upright dagger (pointing up/down)
+            Projectile.rotation = IdleRotation;
 
             var mp = owner.GetModPlayer<VampireSummonReduxPlayer>();
 
@@ -255,6 +266,7 @@ namespace VampireSummonRedux.Content.Projectiles
                 // Reposition near the target before dashing
                 Vector2 hoverNearTarget = target.Center + new Vector2(0, -60f);
                 Vector2 toHover = hoverNearTarget - Projectile.Center;
+                FaceVelocityForAttack();
 
                 // If close enough and cooldown is ready, stab
                 if (distToTarget <= StabStartDistance && Projectile.ai[1] <= 0f)
@@ -262,6 +274,7 @@ namespace VampireSummonRedux.Content.Projectiles
                     Projectile.ai[0] = StateDashForward;
                     Projectile.ai[1] = attackCooldown;// reset cooldown now
                     Projectile.netUpdate = true;
+                    FaceVelocityForAttack();
                 }
                 else
                 {
@@ -270,6 +283,7 @@ namespace VampireSummonRedux.Content.Projectiles
                     Vector2 desiredVel = toHover.SafeNormalize(Vector2.UnitY) * desiredSpeed;
 
                     Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVel, accel);
+                    FaceVelocityForAttack();
                 }
             }
 
