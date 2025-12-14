@@ -10,7 +10,8 @@ namespace VampireSummonRedux.Common.Net
         FullSync,
         BuyUpgrade,
         AddXP,
-        FullSyncRequest
+        FullSyncRequest,
+        Refund
     }
 
     public static class VampireSummonReduxNet
@@ -55,6 +56,14 @@ namespace VampireSummonRedux.Common.Net
             pkt.Write((byte)VampirePacketType.AddXP);
             pkt.Write((byte)playerWho);
             pkt.Write(amount);
+            pkt.Send();
+        }
+
+        public static void SendRefund(int playerWho)
+        {
+            ModPacket pkt = ModContent.GetInstance<VampireSummonRedux.VampireSummonReduxMod>().GetPacket();
+            pkt.Write((byte)VampirePacketType.Refund);
+            pkt.Write((byte)playerWho);
             pkt.Send();
         }
 

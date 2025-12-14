@@ -69,6 +69,13 @@ namespace VampireSummonRedux.Content.Projectiles
                 Projectile.rotation = Projectile.velocity.ToRotation() + AttackRotationOffset;
         }
 
+        private void FaceTarget(NPC target)
+        {
+            Vector2 toTarget = target.Center - Projectile.Center;
+            if (toTarget.LengthSquared() > 0.001f)
+                Projectile.rotation = toTarget.ToRotation() + AttackRotationOffset;
+        }
+
         public override void SetStaticDefaults()
         {
             Main.projFrames[Type] = 1;
@@ -274,7 +281,7 @@ namespace VampireSummonRedux.Content.Projectiles
                     Projectile.ai[0] = StateDashForward;
                     Projectile.ai[1] = attackCooldown;// reset cooldown now
                     Projectile.netUpdate = true;
-                    FaceVelocityForAttack();
+                    FaceTarget(target);
                 }
                 else
                 {
@@ -283,7 +290,7 @@ namespace VampireSummonRedux.Content.Projectiles
                     Vector2 desiredVel = toHover.SafeNormalize(Vector2.UnitY) * desiredSpeed;
 
                     Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVel, accel);
-                    FaceVelocityForAttack();
+                    FaceTarget(target);
                 }
             }
 
@@ -387,8 +394,8 @@ namespace VampireSummonRedux.Content.Projectiles
             float depth = (float)System.Math.Sin(angle);
 
             // Horizontal orbit is big; vertical is small (gives the 3D-ish spin)
-            float rx = 44f;
-            float ry = 12f;
+            float rx = 30f;
+            float ry = 9f;
 
             Vector2 offset = new Vector2((float)System.Math.Cos(angle) * rx, depth * ry);
 

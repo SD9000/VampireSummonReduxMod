@@ -100,6 +100,25 @@ namespace VampireSummonRedux
                     }
                     break;
                 }
+
+                case VampirePacketType.Refund:
+                {
+                    int plr = reader.ReadByte();
+
+                    if (Main.netMode == NetmodeID.Server)
+                    {
+                        if (plr != whoAmI)
+                            plr = whoAmI;
+
+                        var mp = Main.player[plr].GetModPlayer<VampireSummonReduxPlayer>();
+                        mp.RefundAllUpgrades();
+
+                        for (int i = 0; i < Main.maxPlayers; i++)
+                            if (Main.player[i].active)
+                                VampireSummonReduxNet.SendFullSync(plr, i);
+                    }
+                    break;
+                }
             }
         }
     }

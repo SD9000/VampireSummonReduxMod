@@ -107,6 +107,19 @@ namespace VampireSummonRedux.Common.Players
             return true;
         }
 
+        public void RefundAllUpgrades()
+        {
+            DamageRank = 0;
+            SpeedRank = 0;
+            LifestealChanceRank = 0;
+            LifestealAmountRank = 0;
+            FocusSameTargetRank = 0;
+
+            // Give player back all points they've earned from leveling
+            var cfg = ModContent.GetInstance<VampireSummonReduxConfig>();
+            UpgradePoints = (Level - 1) * cfg.PointsPerLevel;
+        }
+
         public override void SaveData(TagCompound tag)
         {
             tag["Level"] = Level;

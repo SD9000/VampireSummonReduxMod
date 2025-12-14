@@ -63,7 +63,27 @@ namespace VampireSummonRedux.Common.UI
             closeBtn.OnLeftClick += (_, __) => VampireUpgradeUISystem.Toggle();
             panel.Append(closeBtn);
 
+            refundBtn = new UITextButton("Refund Upgrades");
+            refundBtn.Width.Set(160, 0);
+            refundBtn.Height.Set(34, 0);
+            refundBtn.Left.Set(10, 0);
+            refundBtn.Top.Set(-44, 1f);
+            refundBtn.OnLeftClick += (_, __) => ClickRefund();
+            panel.Append(refundBtn);
+
             Append(panel);
+        }
+
+        private void ClickRefund()
+        {
+            if (Main.netMode == NetmodeID.SinglePlayer)
+            {
+                Main.LocalPlayer.GetModPlayer<VampireSummonReduxPlayer>().RefundAllUpgrades();
+            }
+            else
+            {
+                VampireSummonReduxNet.SendRefund(Main.myPlayer);
+            }
         }
 
         private UITextButton MakeBtn(float top, System.Action onClick)
