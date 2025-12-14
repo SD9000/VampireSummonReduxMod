@@ -1,76 +1,87 @@
+using System;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ModLoader;
+
 using VampireSummonRedux.Common.Players;
-using Terraria.ID;
-using Microsoft.Xna.Framework;
 
 namespace VampireSummonRedux.Content.Items
 {
-    public class VampireKnives : ModItem
+    public partial class VampireKnives : ModItem
     {
-        public override void SetStaticDefaults()
+        private static int GCD(int a, int b)
         {
-            // Lets right-clicking on enemies (minion targeting) work nicely.
-            ItemID.Sets.LockOnIgnoresCollision[Type] = true;
-            ItemID.Sets.StaffMinionSlotsRequired[Type] = 1f;
+            a = Math.Abs(a); b = Math.Abs(b);
+            while (b != 0) { int t = a % b; a = b; b = t; }
+            return a == 0 ? 1 : a;
+        }
+
+        private static string ChanceAsFraction(int percent)
+        {
+            if (percent <= 0) return "0";
+            int g = GCD(percent, 100);
+            return $"{percent / g}/{100 / g}";
         }
 
         public override void ModifyTooltips(List<TooltipLine> tooltips)
         {
-            var mp = Main.LocalPlayer.GetModPlayer<VampireSummonReduxPlayer>();
+            Player p = Main.LocalPlayer;
+            var mp = p.GetModPlayer<VampireSummonReduxPlayer>();
 
-            int bonus = mp.DamageRank * 2; // MUST match your projectile bonus formula
+            // Damage upgrade info (your minion uses +2 per rank in UI; keep consistent here)
+            const int dmgPerRank = 2;
+            int bonusDmg = mp.DamageRank * dmgPerRank;
 
-            if (bonus > 0)
-                tooltips.Add(new TooltipLine(Mod, "VSRBonusDamage", $"+{bonus} bonus minion damage (from upgrades)"));
-        }
+            // Lifesteal
+            int lsChance = mp.GetLifestealChancePercent();
+            string lsFrac = ChanceAsFraction(lsChance);
+            float lsAmtPct = mp.GetLifestealHealPercent() * 100f;
 
-        public override void SetDefaults()
-        {
-            Item.damage = 15;
-            Item.knockBack = 4f;
-            Item.mana = 10;
-            Item.width = 28;
-            Item.height = 28;
+            // Immunity (local hit cooldown ticks)
+            int cd = mp.GetLocalHitCooldownTicks();
 
-            Item.useTime = 36;
-            Item.useAnimation = 36;
-            Item.useStyle = ItemUseStyleID.Swing;
-            Item.noMelee = true;
-            Item.DamageType = DamageClass.Summon;
-            Item.UseSound = SoundID.Item44;
+            // Speed plateau
+            int plateauPct = (int)(mp.GetSpeedPlateau01() * 100f);
 
-            Item.rare = ItemRarityID.Orange;
-            Item.value = Item.buyPrice(gold: 2);
+            // Insert near the end but before "Material" lines if present
+            int insertIndex = tooltips.Count;
 
-            Item.shoot = ModContent.ProjectileType<Content.Projectiles.VampireKnifeMinion>();
-            Item.buffType = ModContent.BuffType<Content.Buffs.VampireKnifeBuff>();
-        }
+            // Add a header line for clarity
+            tooltips.Insert(insertIndex++, new TooltipLine(Mod, "VSR_Header", "— Upgrades —"));
 
-        public override bool Shoot(Player player, Terraria.DataStructures.EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type, int damage, float knockback)
-        {
-            // Apply buff so the minion persists.
-            player.AddBuff(Item.buffType, 2);
+            // Bonus damage (note: base item damage line won't change, so show bonus explicitly)
+            tooltips.Insert(insertIndex++, new TooltipLine(Mod, "VSR_Damage",
+                                                           bonusDmg > 0
+                                                           ? $"Bonus minion damage: +{bonusDmg} ({mp.DamageRank} ranks)"
+                                                           : "Bonus minion damage: +0"));
 
-            // Spawn at the mouse cursor like most minion staves do.
-            position = Main.MouseWorld;
+            // Lifesteal summary
+            if (lsChance > 0 || lsAmtPct > 0f)
+            {
+                tooltips.Insert(insertIndex++, new TooltipLine(Mod, "VSR_Lifesteal",
+                                                               $"Lifesteal: {lsChance}% ({lsFrac}) chance • heals {lsAmtPct:0.##}% of damage"));
+            }
+            else
+            {
+                tooltips.Insert(insertIndex++, new TooltipLine(Mod, "VSR_Lifesteal",
+                                                               "Lifesteal: 0% chance • heals 0% of damage"));
+            }
 
-            // velocity is irrelevant for aiStyle 169; just give a small nudge so it's not zero.
-            if (velocity.LengthSquared() < 0.001f)
-                velocity = Vector2.UnitY;
+            // Immunity summary
+            tooltips.Insert(insertIndex++, new TooltipLine(Mod, "VSR_Immunity",
+                                                           mp.ImmunityRank > 0
+                                                           ? $"Hit cooldown: {cd} ticks (local NPC immunity) ({mp.ImmunityRank} ranks)"
+                                                           : $"Hit cooldown: {cd} ticks (local NPC immunity)"));
 
-            Projectile.NewProjectile(source, position, velocity, type, damage, knockback, player.whoAmI);
-            return false;
-        }
+            // Speed summary (doesn't promise exact value because actual speed is applied in minion AI)
+            tooltips.Insert(insertIndex++, new TooltipLine(Mod, "VSR_Speed",
+                                                           mp.SpeedRank > 0
+                                                           ? $"Speed: {mp.SpeedRank}/50 ranks • plateau {plateauPct}%"
+                                                           : "Speed: 0/50 ranks"));
 
-        public override void AddRecipes()
-        {
-            CreateRecipe()
-                .AddIngredient(ItemID.ShadowScale, 5)
-                .AddIngredient(ItemID.HellstoneBar, 10)
-                .AddTile(TileID.Anvils)
-                .Register();
+            // Targeting note (since you’ve got player/minion targeting)
+            tooltips.Insert(insertIndex++, new TooltipLine(Mod, "VSR_Targeting",
+                                                           $"Targeting mode: {mp.TargetMode}"));
         }
     }
 }
