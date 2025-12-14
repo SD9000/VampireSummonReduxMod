@@ -61,7 +61,7 @@ namespace VampireSummonRedux
                     mp.SpeedRank = reader.ReadInt32();
                     mp.LifestealChanceRank = reader.ReadInt32();
                     mp.LifestealAmountRank = reader.ReadInt32();
-                    mp.FocusSameTargetRank = reader.ReadInt32();
+                    mp.//FocusSameTargetRank = reader.ReadInt32();
 
                     mp.TargetMode = (TargetingMode)reader.ReadByte();
                     break;

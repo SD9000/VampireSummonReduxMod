@@ -4,6 +4,7 @@ using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
 using Terraria.ID;
 using VampireSummonRedux.Common.Config;
+using VampireSummonRedux.Common.Players;
 
 namespace VampireSummonRedux.Common.Players
 {
@@ -37,7 +38,7 @@ namespace VampireSummonRedux.Common.Players
         // Keep these so the project compiles until you remove focus from UI/minion/net.
         // They do nothing and can be deleted once other files are updated.
         [Obsolete("Focus was removed. This exists only for temporary compile compatibility.")]
-        public int FocusSameTargetRank = 0;
+        public int //FocusSameTargetRank = 0;
 
         // ===== Tuning constants (requested behavior) =====
         // Immunity cooldown model: start at 12, -1 per rank, min 6 => max rank 6
@@ -76,7 +77,7 @@ namespace VampireSummonRedux.Common.Players
 
             TargetMode = TargetingMode.ClosestToPlayer;
 
-            FocusSameTargetRank = 0; // compat
+            //FocusSameTargetRank = 0; // compat
         }
 
         public override void SaveData(TagCompound tag)
@@ -94,7 +95,7 @@ namespace VampireSummonRedux.Common.Players
             tag["TargetMode"] = (int)TargetMode;
 
             // compat
-            tag["FocusSameTargetRank"] = FocusSameTargetRank;
+            tag["//FocusSameTargetRank"] = //FocusSameTargetRank;
         }
 
         public override void LoadData(TagCompound tag)
@@ -112,8 +113,8 @@ namespace VampireSummonRedux.Common.Players
             TargetMode = (TargetingMode)tag.GetInt("TargetMode");
 
             // compat (safe if missing)
-            if (tag.ContainsKey("FocusSameTargetRank"))
-                FocusSameTargetRank = tag.GetInt("FocusSameTargetRank");
+            if (tag.ContainsKey("//FocusSameTargetRank"))
+                //FocusSameTargetRank = tag.GetInt("//FocusSameTargetRank");
 
             // Safety clamps (in case configs changed)
             ClampAll();
@@ -131,7 +132,7 @@ namespace VampireSummonRedux.Common.Players
             LifestealAmountRank = Math.Clamp(LifestealAmountRank, 0, LifestealAmountMaxRank);
             ImmunityRank = Math.Clamp(ImmunityRank, 0, ImmunityMaxRank);
 
-            FocusSameTargetRank = 0; // compat disabled
+            //FocusSameTargetRank = 0; // compat disabled
         }
 
         // ===== XP / Leveling =====
@@ -179,7 +180,7 @@ namespace VampireSummonRedux.Common.Players
                 UpgradeType.ImmunityFrames => ImmunityRank,
 
                 // Focus removed
-                UpgradeType.FocusSameTarget => 0,
+                UpgradeType.//FocusSameTarget => 0,
 
                 _ => 0
             };
@@ -203,7 +204,7 @@ namespace VampireSummonRedux.Common.Players
                 return false;
 
             // Focus removed
-            if (up == UpgradeType.FocusSameTarget)
+            if (up == UpgradeType.//FocusSameTarget)
                 return false;
 
             int cost = GetUpgradeCost(up);
@@ -245,7 +246,7 @@ namespace VampireSummonRedux.Common.Players
                     break;
 
                     // Focus removed
-                case UpgradeType.FocusSameTarget:
+                case UpgradeType.//FocusSameTarget:
                 default:
                     // If somehow called, refund the cost so no points are lost.
                     UpgradePoints += cost;
@@ -264,7 +265,7 @@ namespace VampireSummonRedux.Common.Players
             ImmunityRank = 0;
 
             // Focus removed
-            FocusSameTargetRank = 0;
+            //FocusSameTargetRank = 0;
 
             // Rebuild points based on level
             var cfg = ModContent.GetInstance<VampireSummonReduxConfig>();
@@ -337,7 +338,7 @@ namespace VampireSummonRedux.Common.Players
         ClosestToMinion
     }
 
-    // Same deal: ensure your project enum includes ImmunityFrames and does NOT use FocusSameTarget anymore.
+    // Same deal: ensure your project enum includes ImmunityFrames and does NOT use //FocusSameTarget anymore.
     public enum UpgradeType
     {
         Damage,
@@ -347,6 +348,6 @@ namespace VampireSummonRedux.Common.Players
         ImmunityFrames,
 
         // Focus removed (left here only for compat if it still exists elsewhere)
-        FocusSameTarget
+        //FocusSameTarget
     }
 }

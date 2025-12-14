@@ -35,7 +35,7 @@ namespace VampireSummonRedux.Common.Net
             pkt.Write(mp.SpeedRank);
             pkt.Write(mp.LifestealChanceRank);
             pkt.Write(mp.LifestealAmountRank);
-            pkt.Write(mp.FocusSameTargetRank);
+            //pkt.Write(mp.//FocusSameTargetRank);
 
             pkt.Write((byte)mp.TargetMode);
             pkt.Send(toWho);
