@@ -159,9 +159,10 @@ namespace VampireSummonRedux.Common.Players
         {
             // Use your existing config fields if they exist. If not, adjust here.
             // Common pattern: base + perLevel * (Level - 1)
-            int baseReq = Math.Max(1, cfg.XPToLevelBase);
-            int perLvl = Math.Max(0, cfg.XPToLevelPerLevel);
-            return baseReq + perLvl * (Level - 1);
+            const int XPToLevelBase = 50;
+            const int XPToLevelPerLevel = 15;
+
+            int xpToNext = XPToLevelBase + XPToLevelPerLevel * (Level - 1);
         }
 
         // ===== Upgrade purchasing =====
