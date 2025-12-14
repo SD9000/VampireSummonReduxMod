@@ -1,0 +1,7 @@
+This mod is a small commission I did for someone. It includes one weapon - a summoner version of the Vampire Knives.
+The weapon summons knives that revolve around the player when idle and jab at enemies. There's a chance for lifesteal to occur.
+
+The main feature of the mod is that the weapon is upgradeable in 5 different categories throughout your playthrough: Damage, Speed, Lifesteal Amount, Lifesteal Chance, and how often the knives attack.
+
+Stats can be upgraded with experience earned by dealing damage. The cost to buy upgrades increases with the number of upgrades bought.
+There is also a damage cap for hardmode and Moon Lord - these along with the base upgrade cost are configurable.
