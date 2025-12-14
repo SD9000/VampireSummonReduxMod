@@ -128,7 +128,7 @@ namespace VampireSummonRedux.Common.UI
         private void SetDesc(string text)
         {
             if (descText != null)
-                descText.SetText(text, 0.60f);
+                descText.SetText(text);
         }
 
         public override void Update(GameTime gameTime)
@@ -147,19 +147,38 @@ namespace VampireSummonRedux.Common.UI
             UpdateTextAndButtons();
         }
 
+        private int GetCost(VampireSummonReduxPlayer mp, UpgradeType type)
+        {
+            // Match whatever your existing economy is.
+            // This is a common “base + scaling * currentRank” pattern.
+            // Replace these config field names if yours differ.
+            var cfg = ModContent.GetInstance<VampireSummonRedux.Common.Config.VampireSummonReduxConfig>();
+
+            int rank =
+            type == UpgradeType.Damage ? mp.DamageRank :
+            type == UpgradeType.Speed ? mp.SpeedRank :
+            type == UpgradeType.LifestealChance ? mp.LifestealChanceRank :
+            type == UpgradeType.LifestealAmount ? mp.LifestealAmountRank :
+            type == UpgradeType.FocusSameTarget ? mp.FocusSameTargetRank :
+            0;
+
+            // If your config has a single base cost + per-rank scaling:
+            return cfg.BaseUpgradeCost + cfg.UpgradeCostPerRank * rank;
+        }
+
         private void UpdateTextAndButtons()
         {
             Player p = Main.LocalPlayer;
             var mp = p.GetModPlayer<VampireSummonReduxPlayer>();
 
-            pointsLine.SetText($"Upgrade Points: {mp.UpgradePoints}", BtnTextScale);
-            xpLine.SetText($"Level: {mp.Level} | XP: {mp.XP}", BtnTextScale);
+            pointsLine.SetText($"Upgrade Points: {mp.UpgradePoints}");
+            xpLine.SetText($"Level: {mp.Level} | XP: {mp.XP}");
 
-            int dmgCost = mp.GetUpgradeCost(UpgradeType.Damage);
-            int spdCost = mp.GetUpgradeCost(UpgradeType.Speed);
-            int lscCost = mp.GetUpgradeCost(UpgradeType.LifestealChance);
-            int lsaCost = mp.GetUpgradeCost(UpgradeType.LifestealAmount);
-            int focCost = mp.GetUpgradeCost(UpgradeType.FocusSameTarget);
+            int dmgCost = GetCost(mp, UpgradeType.Damage);
+            int spdCost = GetCost(mp, UpgradeType.Speed);
+            int lscCost = GetCost(mp, UpgradeType.LifestealChance);
+            int lsaCost = GetCost(mp, UpgradeType.LifestealAmount);
+            int focCost = GetCost(mp, UpgradeType.FocusSameTarget);
 
             dmgBtn.SetText(Label("Damage", mp.DamageRank, dmgCost));
             spdBtn.SetText(Label("Speed", mp.SpeedRank, spdCost));
