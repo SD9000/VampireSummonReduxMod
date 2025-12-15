@@ -43,10 +43,10 @@ namespace VampireSummonRedux.Common.Players
 
         // ===== Tuning constants (requested behavior) =====
         // Immunity cooldown model: start at 12, -1 per rank, min 6 => max rank 6
-        public const int ImmunityBaseCooldown = 12;
+        public const int ImmunityBaseCooldown = 18;
         public const int ImmunityMinCooldown = 6;
         public const int ImmunityCooldownDownPerRank = 1;
-        public const int ImmunityMaxRank = 6;
+        public const int ImmunityMaxRank = ImmunityBaseCooldown - ImmunityMinCooldown;
 
         // Lifesteal chance: +2% per rank, cap 100%
         public const int LifestealChancePerRankPercent = 2;
@@ -102,6 +102,30 @@ namespace VampireSummonRedux.Common.Players
             VampireSummonRedux.Common.UI.VampireUpgradeUISystem.Toggle();
         }
 
+        private static int ReadInt(TagCompound tag, string key, int fallback = 0)
+        {
+            if (tag == null || !tag.ContainsKey(key))
+                return fallback;
+
+            // Most common cases
+            if (tag.TryGet(key, out int i))
+                return i;
+
+            if (tag.TryGet(key, out long l))
+                return l > int.MaxValue ? int.MaxValue : (l < int.MinValue ? int.MinValue : (int)l);
+
+            // Last-resort: handle other numeric types or strings without crashing
+            try
+            {
+                object o = tag.Get<object>(key);
+                return Convert.ToInt32(o);
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+
         public override void SaveData(TagCompound tag)
         {
             tag["Level"] = Level;
@@ -122,21 +146,23 @@ namespace VampireSummonRedux.Common.Players
 
         public override void LoadData(TagCompound tag)
         {
-            Level = tag.GetInt("Level");
-            XP = tag.GetInt("XP");
-            UpgradePoints = tag.GetInt("UpgradePoints");
+            // Use ReadInt to be backward-compatible with older saves that stored longs
+            Level = ReadInt(tag, "Level", 1);
+            XP = ReadInt(tag, "XP", 0);
+            UpgradePoints = ReadInt(tag, "UpgradePoints", 0);
 
-            DamageRank = tag.GetInt("DamageRank");
-            SpeedRank = tag.GetInt("SpeedRank");
-            LifestealChanceRank = tag.GetInt("LifestealChanceRank");
-            LifestealAmountRank = tag.GetInt("LifestealAmountRank");
-            ImmunityRank = tag.GetInt("ImmunityRank");
+            DamageRank = ReadInt(tag, "DamageRank", 0);
+            SpeedRank = ReadInt(tag, "SpeedRank", 0);
+            LifestealChanceRank = ReadInt(tag, "LifestealChanceRank", 0);
+            LifestealAmountRank = ReadInt(tag, "LifestealAmountRank", 0);
+            ImmunityRank = ReadInt(tag, "ImmunityRank", 0);
 
-            TargetMode = (TargetingMode)tag.GetInt("TargetMode");
+            // TargetMode stored as int; still use ReadInt for safety
+            TargetMode = (TargetingMode)ReadInt(tag, "TargetMode", (int)TargetingMode.ClosestToPlayer);
 
-            // compat (safe if missing)
-            if (tag.ContainsKey("//FocusSameTargetRank"))
-                //FocusSameTargetRank = tag.GetInt("//FocusSameTargetRank");
+            // compat (safe if missing): if you want to keep the key around but do nothing,
+            // just read it (prevents exceptions) and discard.
+            _ = ReadInt(tag, "//FocusSameTargetRank", 0);
 
             // Safety clamps (in case configs changed)
             ClampAll();
